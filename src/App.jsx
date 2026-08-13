@@ -1,0 +1,287 @@
+import React, { useState, useEffect } from 'react';
+import Sidebar from './components/Sidebar';
+import Dashboard from './pages/Dashboard';
+import ListeningOverlay from './components/ListeningOverlay';
+import Archive from './pages/Archive';
+import Settings from './pages/Settings';
+import Profile from './pages/Profile';
+import Help from './pages/Help';
+import {
+  fetchAllChats,
+  createChat,
+  updateChat,
+  deleteChat,
+  sendMessage,
+  uploadPDF,
+  transcribeAudio
+} from './services/api';
+
+export default function App() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [activeView, setActiveView] = useState('chat');
+  const [activeChatId, setActiveChatId] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+
+  // ─── Load all chats from MongoDB on mount ─────────────────────────────────
+  useEffect(() => {
+    loadChats();
+  }, []);
+
+  const loadChats = async () => {
+    try {
+      setIsLoading(true);
+      const data = await fetchAllChats();
+      setChats(data);
+    } catch (err) {
+      console.error('Failed to load chats:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ─── Create a new chat session ─────────────────────────────────────────────
+  const handleNewChat = async () => {
+    try {
+      const newChat = await createChat('New Chat Session');
+      setChats(prev => [newChat, ...prev]);
+      setActiveChatId(newChat._id);
+      setActiveView('chat');
+    } catch (err) {
+      console.error('Failed to create chat:', err);
+    }
+  };
+
+  const handleSelectChat = (id) => {
+    setActiveChatId(id);
+    setActiveView('chat');
+  };
+
+  // ─── Archive a chat (set archived: true in DB) ─────────────────────────────
+  const handleArchiveChat = async (id) => {
+    try {
+      const updated = await updateChat(id, { archived: true });
+      setChats(prev => prev.map(c => c._id === id ? updated : c));
+      if (activeChatId === id) setActiveChatId(null);
+    } catch (err) {
+      console.error('Failed to archive chat:', err);
+    }
+  };
+
+  // ─── Restore a chat (set archived: false in DB) ────────────────────────────
+  const handleRestoreChat = async (id) => {
+    try {
+      const updated = await updateChat(id, { archived: false });
+      setChats(prev => prev.map(c => c._id === id ? updated : c));
+    } catch (err) {
+      console.error('Failed to restore chat:', err);
+    }
+  };
+
+  // ─── Delete a chat permanently from DB ────────────────────────────────────
+  const handleDeleteChat = async (id) => {
+    try {
+      await deleteChat(id);
+      setChats(prev => prev.filter(c => c._id !== id));
+      if (activeChatId === id) setActiveChatId(null);
+    } catch (err) {
+      console.error('Failed to delete chat:', err);
+    }
+  };
+
+  // ─── Send message + receive AI response ───────────────────────────────────
+  const handleSendMessage = async (text) => {
+    let currentId = activeChatId;
+
+    // If no session is active, create one first
+    if (!currentId) {
+      try {
+        const title = text.length > 30 ? text.substring(0, 30) + '...' : text;
+        const newChat = await createChat(title);
+        setChats(prev => [newChat, ...prev]);
+        setActiveChatId(newChat._id);
+        currentId = newChat._id;
+      } catch (err) {
+        console.error('Failed to create chat:', err);
+        return;
+      }
+    }
+
+    // Optimistic update: show user message immediately before API responds
+    const optimisticMsg = {
+      _id: `optimistic-${Date.now()}`,
+      role: 'user',
+      content: text,
+      timestamp: new Date().toISOString()
+    };
+    setChats(prev => prev.map(c =>
+      c._id === currentId
+        ? { ...c, messages: [...(c.messages || []), optimisticMsg] }
+        : c
+    ));
+
+    try {
+      setIsSending(true);
+      const updatedChat = await sendMessage(currentId, text);
+      // Replace optimistic state with real server response
+      setChats(prev => prev.map(c => c._id === currentId ? updatedChat : c));
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      // Remove optimistic message on failure
+      setChats(prev => prev.map(c =>
+        c._id === currentId
+          ? { ...c, messages: c.messages.filter(m => m._id !== optimisticMsg._id) }
+          : c
+      ));
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleSuggestionClick = (label) => {
+    handleSendMessage(label);
+  };
+
+  // ─── Upload PDF to the active chat session ─────────────────────────────────
+  const handleAttachPDF = async (file) => {
+    let chatId = activeChatId;
+
+    // Create a new chat first if none is active
+    if (!chatId) {
+      try {
+        const newChat = await createChat('PDF: ' + file.name.replace('.pdf', ''));
+        setChats(prev => [newChat, ...prev]);
+        setActiveChatId(newChat._id);
+        chatId = newChat._id;
+      } catch (err) {
+        console.error('Failed to create chat for PDF:', err);
+        alert('Could not create chat session. Is the backend server running?');
+        return;
+      }
+    }
+
+    try {
+      console.log(`Uploading PDF "${file.name}" to chat ${chatId}...`);
+      const result = await uploadPDF(chatId, file);
+      setChats(prev => prev.map(c =>
+        c._id === chatId ? { ...c, activePDF: result.activePDF } : c
+      ));
+      console.log('PDF upload success:', result.message);
+    } catch (err) {
+      console.error('Failed to upload PDF:', err);
+      alert(`PDF upload failed: ${err.message}`);
+    }
+  };
+
+  // ─── Remove PDF context from the active chat session ──────────────────────
+  const handleRemovePDF = async () => {
+    if (!activeChatId) return;
+    try {
+      const updated = await updateChat(activeChatId, { activePDF: null });
+      setChats(prev => prev.map(c => c._id === activeChatId ? updated : c));
+    } catch (err) {
+      console.error('Failed to remove PDF:', err);
+    }
+  };
+
+  // ─── Handle Whisper transcription from ListeningOverlay ───────────────────
+  const handleTranscriptionComplete = (text) => {
+    if (text && text.trim()) {
+      handleSendMessage(text);
+    }
+  };
+
+  const currentChat = chats.find(c => c._id === activeChatId);
+
+  // ─── Render active page view ───────────────────────────────────────────────
+  const renderActiveView = () => {
+    switch (activeView) {
+      case 'chat':
+        return (
+          <Dashboard
+            onMenuToggle={() => setIsSidebarOpen(true)}
+            onVoiceToggle={() => setIsListening(true)}
+            chatSession={currentChat}
+            onSendMessage={handleSendMessage}
+            onSuggestionClick={handleSuggestionClick}
+            onAttachPDF={handleAttachPDF}
+            onRemovePDF={handleRemovePDF}
+            isSending={isSending}
+          />
+        );
+      case 'archive':
+        return (
+          <Archive
+            chats={chats}
+            onRestoreChat={handleRestoreChat}
+            onDeleteChat={handleDeleteChat}
+          />
+        );
+      case 'settings':
+        return <Settings />;
+      case 'profile':
+        return <Profile />;
+      case 'help':
+        return <Help />;
+      default:
+        return (
+          <Dashboard
+            onMenuToggle={() => setIsSidebarOpen(true)}
+            onVoiceToggle={() => setIsListening(true)}
+            chatSession={currentChat}
+            onSendMessage={handleSendMessage}
+            onSuggestionClick={handleSuggestionClick}
+            onAttachPDF={handleAttachPDF}
+            onRemovePDF={handleRemovePDF}
+            isSending={isSending}
+          />
+        );
+    }
+  };
+
+  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-[#0d0b11]">
+
+      {/* Sidebar Navigation */}
+      <Sidebar
+        chats={chats}
+        activeChatId={activeChatId}
+        onSelectChat={handleSelectChat}
+        onNewChat={handleNewChat}
+        onArchiveChat={handleArchiveChat}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        activeView={activeView}
+        onSelectView={setActiveView}
+        isLoading={isLoading}
+      />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {activeView !== 'chat' && (
+          <div className="md:hidden flex items-center px-4 py-3 bg-[#17141e] border-b border-[#2d2938]">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 text-[#9c93a8] hover:text-white rounded-lg"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <span className="ml-2 font-semibold text-white capitalize">{activeView}</span>
+          </div>
+        )}
+        {renderActiveView()}
+      </div>
+
+      {/* Voice Listening Overlay — records mic and sends to Whisper */}
+      <ListeningOverlay
+        isOpen={isListening}
+        onClose={() => setIsListening(false)}
+        onTranscriptionComplete={handleTranscriptionComplete}
+      />
+    </div>
+  );
+}

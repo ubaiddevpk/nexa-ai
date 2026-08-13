@@ -1,0 +1,204 @@
+import React from 'react';
+import { 
+  Plus, 
+  MessageSquare, 
+  Archive, 
+  Settings, 
+  User, 
+  HelpCircle,
+  X,
+  Sparkles,
+  ArchiveRestore
+} from 'lucide-react';
+
+export default function Sidebar({ 
+  chats = [], 
+  activeChatId, 
+  onSelectChat, 
+  onNewChat, 
+  onArchiveChat,
+  isOpen, 
+  onClose,
+  activeView,
+  onSelectView,
+  isLoading = false
+}) {
+  // Only show active (non-archived) chats in sidebar recent chats
+  const activeChats = chats.filter(chat => !chat.archived);
+
+  return (
+    <>
+      {/* Mobile Backdrop overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/60 md:hidden transition-opacity duration-300"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar container */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 flex flex-col w-72 bg-[#17141e] border-r border-[#2d2938] 
+        transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-screen
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        {/* Header / Brand */}
+        <div className="flex items-center justify-between p-5 border-b border-[#2d2938]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-900/30">
+              <Sparkles className="w-5 h-5 text-white animate-pulse" />
+            </div>
+            <div>
+              <h1 className="font-bold text-lg text-white leading-tight">Nexa AI</h1>
+              <span className="text-xs text-[#9c93a8]">Intelligent Assistant</span>
+            </div>
+          </div>
+          
+          {/* Close button on mobile */}
+          <button 
+            onClick={onClose}
+            className="p-1 text-[#9c93a8] hover:text-white rounded-md md:hidden hover:bg-[#201c2a]"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Navigation Controls */}
+        <div className="p-4 flex flex-col gap-3">
+          <button 
+            onClick={() => {
+              onNewChat();
+              onClose();
+            }}
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white font-medium flex items-center justify-center gap-2 shadow-lg shadow-purple-900/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus className="w-5 h-5" />
+            <span>New Chat</span>
+          </button>
+        </div>
+
+        {/* Scrollable list content */}
+        <div className="flex-1 overflow-y-auto px-3 space-y-6 py-2">
+          {/* Recent Chats Section */}
+          <div>
+            <div className="flex items-center gap-2 px-3 text-[#9c93a8] text-xs font-semibold uppercase tracking-wider mb-2">
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Recent Chats</span>
+            </div>
+            <div className="space-y-1">
+              {isLoading ? (
+                <div className="space-y-2 px-3">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="h-9 rounded-xl bg-[#201c2a] animate-pulse" />
+                  ))}
+                </div>
+              ) : activeChats.length === 0 ? (
+                <div className="text-xs text-[#6b6375] italic px-3 py-2">No active chats</div>
+              ) : (
+                activeChats.map(chat => (
+                  <div 
+                    key={chat._id} 
+                    className="relative group/item flex items-center"
+                  >
+                    <button
+                      onClick={() => {
+                        onSelectChat(chat._id);
+                        onSelectView('chat');
+                        onClose();
+                      }}
+                      className={`w-full text-left pl-3 pr-10 py-2.5 rounded-xl text-sm transition-all duration-150 flex items-center justify-between ${
+                        activeChatId === chat._id && activeView === 'chat'
+                          ? 'bg-[#2a2438] text-white font-medium border-l-4 border-purple-500 pl-2'
+                          : 'text-[#9c93a8] hover:bg-[#201c2a] hover:text-white'
+                      }`}
+                    >
+                      <span className="truncate pr-1">{chat.title}</span>
+                    </button>
+                    
+                    {/* Quick Archive button on hover */}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onArchiveChat(chat._id);
+                      }}
+                      className="absolute right-2 opacity-0 group-hover/item:opacity-100 p-1.5 rounded-lg text-[#9c93a8] hover:text-white hover:bg-[#2c2738] transition-all"
+                      title="Archive chat"
+                    >
+                      <Archive className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Navigation Views */}
+          <div className="space-y-1">
+            <button
+              onClick={() => {
+                onSelectView('archive');
+                onClose();
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeView === 'archive'
+                  ? 'bg-[#2a2438] text-white'
+                  : 'text-[#9c93a8] hover:bg-[#201c2a] hover:text-white'
+              }`}
+            >
+              <ArchiveRestore className="w-5 h-5" />
+              <span>Archive</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onSelectView('settings');
+                onClose();
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeView === 'settings'
+                  ? 'bg-[#2a2438] text-white'
+                  : 'text-[#9c93a8] hover:bg-[#201c2a] hover:text-white'
+              }`}
+            >
+              <Settings className="w-5 h-5" />
+              <span>Settings</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Footer Area */}
+        <div className="p-4 border-t border-[#2d2938] space-y-1">
+          <button
+            onClick={() => {
+              onSelectView('profile');
+              onClose();
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeView === 'profile'
+                ? 'bg-[#2a2438] text-white'
+                : 'text-[#9c93a8] hover:bg-[#201c2a] hover:text-white'
+            }`}
+          >
+            <User className="w-5 h-5" />
+            <span>Profile</span>
+          </button>
+
+          <button
+            onClick={() => {
+              onSelectView('help');
+              onClose();
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeView === 'help'
+                ? 'bg-[#2a2438] text-white'
+                : 'text-[#9c93a8] hover:bg-[#201c2a] hover:text-white'
+            }`}
+          >
+            <HelpCircle className="w-5 h-5" />
+            <span>Help</span>
+          </button>
+        </div>
+      </aside>
+    </>
+  );
+}
