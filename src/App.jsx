@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import ListeningOverlay from './components/ListeningOverlay';
+import AuthModal from './components/AuthModal';
 import Archive from './pages/Archive';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Help from './pages/Help';
+import { useAuth } from './context/AuthContext';
 import {
   fetchAllChats,
   createChat,
@@ -16,7 +18,10 @@ import {
   transcribeAudio
 } from './services/api';
 
+const LOCAL_STORAGE_CHATS_KEY = 'nexa_guest_chats';
+
 export default function App() {
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [activeView, setActiveView] = useState('chat');
@@ -25,16 +30,38 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
-  // ─── Load all chats from MongoDB on mount ─────────────────────────────────
+  // ─── Load chats on mount and when authentication state changes ─────────────
   useEffect(() => {
     loadChats();
-  }, []);
+  }, [user, isAuthenticated]);
 
   const loadChats = async () => {
     try {
       setIsLoading(true);
-      const data = await fetchAllChats();
-      setChats(data);
+      if (isAuthenticated) {
+        // Authenticated: fetch user's synced chats from MongoDB
+        const data = await fetchAllChats();
+        setChats(data);
+      } else {
+        // Guest mode: load from localStorage
+        const stored = localStorage.getItem(LOCAL_STORAGE_CHATS_KEY);
+        if (stored) {
+          try {
+            setChats(JSON.parse(stored));
+          } catch (e) {
+            setChats([]);
+          }
+        } else {
+          // If no local chats exist, try fetching default chats or initialize empty
+          try {
+            const data = await fetchAllChats();
+            setChats(data);
+            localStorage.setItem(LOCAL_STORAGE_CHATS_KEY, JSON.stringify(data));
+          } catch {
+            setChats([]);
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to load chats:', err);
     } finally {
@@ -42,11 +69,22 @@ export default function App() {
     }
   };
 
+  // Helper to persist chats to localStorage when user is in guest mode
+  const saveGuestChats = (newChats) => {
+    if (!isAuthenticated) {
+      localStorage.setItem(LOCAL_STORAGE_CHATS_KEY, JSON.stringify(newChats));
+    }
+  };
+
   // ─── Create a new chat session ─────────────────────────────────────────────
   const handleNewChat = async () => {
     try {
       const newChat = await createChat('New Chat Session');
-      setChats(prev => [newChat, ...prev]);
+      setChats(prev => {
+        const updated = [newChat, ...prev];
+        saveGuestChats(updated);
+        return updated;
+      });
       setActiveChatId(newChat._id);
       setActiveView('chat');
     } catch (err) {
@@ -59,32 +97,44 @@ export default function App() {
     setActiveView('chat');
   };
 
-  // ─── Archive a chat (set archived: true in DB) ─────────────────────────────
+  // ─── Archive a chat (set archived: true) ───────────────────────────────────
   const handleArchiveChat = async (id) => {
     try {
       const updated = await updateChat(id, { archived: true });
-      setChats(prev => prev.map(c => c._id === id ? updated : c));
+      setChats(prev => {
+        const next = prev.map(c => c._id === id ? updated : c);
+        saveGuestChats(next);
+        return next;
+      });
       if (activeChatId === id) setActiveChatId(null);
     } catch (err) {
       console.error('Failed to archive chat:', err);
     }
   };
 
-  // ─── Restore a chat (set archived: false in DB) ────────────────────────────
+  // ─── Restore a chat (set archived: false) ──────────────────────────────────
   const handleRestoreChat = async (id) => {
     try {
       const updated = await updateChat(id, { archived: false });
-      setChats(prev => prev.map(c => c._id === id ? updated : c));
+      setChats(prev => {
+        const next = prev.map(c => c._id === id ? updated : c);
+        saveGuestChats(next);
+        return next;
+      });
     } catch (err) {
       console.error('Failed to restore chat:', err);
     }
   };
 
-  // ─── Delete a chat permanently from DB ────────────────────────────────────
+  // ─── Delete a chat permanently ────────────────────────────────────────────
   const handleDeleteChat = async (id) => {
     try {
       await deleteChat(id);
-      setChats(prev => prev.filter(c => c._id !== id));
+      setChats(prev => {
+        const next = prev.filter(c => c._id !== id);
+        saveGuestChats(next);
+        return next;
+      });
       if (activeChatId === id) setActiveChatId(null);
     } catch (err) {
       console.error('Failed to delete chat:', err);
@@ -100,7 +150,11 @@ export default function App() {
       try {
         const title = text.length > 30 ? text.substring(0, 30) + '...' : text;
         const newChat = await createChat(title);
-        setChats(prev => [newChat, ...prev]);
+        setChats(prev => {
+          const next = [newChat, ...prev];
+          saveGuestChats(next);
+          return next;
+        });
         setActiveChatId(newChat._id);
         currentId = newChat._id;
       } catch (err) {
@@ -116,25 +170,42 @@ export default function App() {
       content: text,
       timestamp: new Date().toISOString()
     };
-    setChats(prev => prev.map(c =>
-      c._id === currentId
-        ? { ...c, messages: [...(c.messages || []), optimisticMsg] }
-        : c
-    ));
+    setChats(prev => {
+      const next = prev.map(c =>
+        c._id === currentId
+          ? { ...c, messages: [...(c.messages || []), optimisticMsg] }
+          : c
+      );
+      saveGuestChats(next);
+      return next;
+    });
 
     try {
       setIsSending(true);
       const updatedChat = await sendMessage(currentId, text);
       // Replace optimistic state with real server response
-      setChats(prev => prev.map(c => c._id === currentId ? updatedChat : c));
+      setChats(prev => {
+        const next = prev.map(c => c._id === currentId ? updatedChat : c);
+        saveGuestChats(next);
+        return next;
+      });
+
+      // Refresh token counter in profile if authenticated
+      if (refreshUser) {
+        refreshUser();
+      }
     } catch (err) {
       console.error('Failed to send message:', err);
       // Remove optimistic message on failure
-      setChats(prev => prev.map(c =>
-        c._id === currentId
-          ? { ...c, messages: c.messages.filter(m => m._id !== optimisticMsg._id) }
-          : c
-      ));
+      setChats(prev => {
+        const next = prev.map(c =>
+          c._id === currentId
+            ? { ...c, messages: c.messages.filter(m => m._id !== optimisticMsg._id) }
+            : c
+        );
+        saveGuestChats(next);
+        return next;
+      });
     } finally {
       setIsSending(false);
     }
@@ -152,7 +223,11 @@ export default function App() {
     if (!chatId) {
       try {
         const newChat = await createChat('PDF: ' + file.name.replace('.pdf', ''));
-        setChats(prev => [newChat, ...prev]);
+        setChats(prev => {
+          const next = [newChat, ...prev];
+          saveGuestChats(next);
+          return next;
+        });
         setActiveChatId(newChat._id);
         chatId = newChat._id;
       } catch (err) {
@@ -165,9 +240,13 @@ export default function App() {
     try {
       console.log(`Uploading PDF "${file.name}" to chat ${chatId}...`);
       const result = await uploadPDF(chatId, file);
-      setChats(prev => prev.map(c =>
-        c._id === chatId ? { ...c, activePDF: result.activePDF } : c
-      ));
+      setChats(prev => {
+        const next = prev.map(c =>
+          c._id === chatId ? { ...c, activePDF: result.activePDF } : c
+        );
+        saveGuestChats(next);
+        return next;
+      });
       console.log('PDF upload success:', result.message);
     } catch (err) {
       console.error('Failed to upload PDF:', err);
@@ -180,7 +259,11 @@ export default function App() {
     if (!activeChatId) return;
     try {
       const updated = await updateChat(activeChatId, { activePDF: null });
-      setChats(prev => prev.map(c => c._id === activeChatId ? updated : c));
+      setChats(prev => {
+        const next = prev.map(c => c._id === activeChatId ? updated : c);
+        saveGuestChats(next);
+        return next;
+      });
     } catch (err) {
       console.error('Failed to remove PDF:', err);
     }
@@ -282,6 +365,9 @@ export default function App() {
         onClose={() => setIsListening(false)}
         onTranscriptionComplete={handleTranscriptionComplete}
       />
+
+      {/* Google Sign-In First Time / On-Demand Modal */}
+      <AuthModal />
     </div>
   );
 }

@@ -1,25 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Sparkles, 
-  Moon, 
   Key, 
-  Volume2, 
   Save, 
   AlertCircle,
-  Database,
-  Lock,
-  Cpu
+  CheckCircle2,
+  Trash2,
+  ExternalLink,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 
 export default function SettingsView() {
-  const [openAiKey, setOpenAiKey] = useState('');
-  const [modelType, setModelType] = useState('gpt-4-omni');
-  const [enableVoice, setEnableVoice] = useState(true);
-  const [themeMode, setThemeMode] = useState('dark');
+  const [customApiKey, setCustomApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [hasCustomKey, setHasCustomKey] = useState(false);
 
-  const handleSaveSettings = (e) => {
+  useEffect(() => {
+    const savedKey = localStorage.getItem('nexa_custom_gemini_api_key');
+    if (savedKey) {
+      setCustomApiKey(savedKey);
+      setHasCustomKey(true);
+    }
+  }, []);
+
+  const handleSave = (e) => {
     e.preventDefault();
+    if (customApiKey.trim()) {
+      localStorage.setItem('nexa_custom_gemini_api_key', customApiKey.trim());
+      setHasCustomKey(true);
+    } else {
+      localStorage.removeItem('nexa_custom_gemini_api_key');
+      setHasCustomKey(false);
+    }
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleRemove = () => {
+    localStorage.removeItem('nexa_custom_gemini_api_key');
+    setCustomApiKey('');
+    setHasCustomKey(false);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
@@ -28,144 +48,109 @@ export default function SettingsView() {
     <div className="flex-1 flex flex-col bg-[#0d0b11] h-screen overflow-y-auto px-6 md:px-12 py-8">
       {/* Header */}
       <div className="border-b border-[#2d2938] pb-6 mb-8">
-        <h2 className="text-2xl font-bold text-white tracking-wide">System Settings</h2>
+        <h2 className="text-2xl font-bold text-white tracking-wide">Settings</h2>
         <p className="text-sm text-[#9c93a8] mt-1">
-          Configure API credentials, model behaviors, theme adjustments, and interface controls.
+          Configure your Google Gemini API key to use your own quota and tier, or leave blank to use the default system key.
         </p>
       </div>
 
-      <form onSubmit={handleSaveSettings} className="max-w-2xl space-y-6">
+      <div className="max-w-2xl space-y-6">
         
-        {/* API Credentials */}
-        <div className="p-6 rounded-2xl bg-[#17141e] border border-[#2d2938] space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400">
-              <Key className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white text-sm">Credentials</h3>
-              <p className="text-xs text-[#9c93a8]">Required API secrets for OpenAI model access.</p>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs text-[#9c93a8] font-medium">OpenAI API Key</label>
-            <input 
-              type="password"
-              value={openAiKey}
-              onChange={(e) => setOpenAiKey(e.target.value)}
-              placeholder="sk-proj-........................"
-              className="w-full px-4 py-2.5 rounded-xl bg-[#0d0b11] border border-[#2d2938] focus:border-purple-500/50 outline-none text-sm text-white"
-            />
-            <p className="text-[10px] text-[#6b6375] flex items-center gap-1">
-              <AlertCircle className="w-3 h-3 shrink-0" />
-              <span>Keys are saved locally in the browser or .env configuration files.</span>
+        {/* Status Banner */}
+        <div className={`p-4 rounded-2xl border flex items-start gap-3.5 transition-all ${
+          hasCustomKey 
+            ? 'bg-purple-950/20 border-purple-800/40 text-purple-200'
+            : 'bg-[#17141e] border-[#2d2938] text-[#9c93a8]'
+        }`}>
+          {hasCustomKey ? (
+            <Zap className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+          ) : (
+            <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          )}
+          <div className="text-xs space-y-1">
+            <p className="font-semibold text-white">
+              {hasCustomKey 
+                ? 'Using Custom Gemini API Key' 
+                : 'Using Default System Gemini Tier'}
+            </p>
+            <p className="leading-relaxed">
+              {hasCustomKey 
+                ? 'Your requests are authenticated using your personal Google Gemini API key and quota.' 
+                : 'No personal API key configured. Nexa AI is running seamlessly with the default shared backend API key.'}
             </p>
           </div>
         </div>
 
-        {/* Model Selection */}
-        <div className="p-6 rounded-2xl bg-[#17141e] border border-[#2d2938] space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
-              <Cpu className="w-5 h-5" />
+        {/* Gemini API Key Form */}
+        <form onSubmit={handleSave} className="p-6 rounded-2xl bg-[#17141e] border border-[#2d2938] space-y-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                <Key className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white text-sm">Google Gemini API Key</h3>
+                <p className="text-xs text-[#9c93a8]">Provide your custom key from Google AI Studio</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-white text-sm">AI Engine Configurations</h3>
-              <p className="text-xs text-[#9c93a8]">Fine-tune the default routing models.</p>
-            </div>
+            
+            <a 
+              href="https://aistudio.google.com/app/apikey" 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 font-medium transition-colors"
+            >
+              <span>Get API Key</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs text-[#9c93a8] font-medium">Default Chat Model</label>
-              <select 
-                value={modelType}
-                onChange={(e) => setModelType(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0d0b11] border border-[#2d2938] focus:border-purple-500/50 outline-none text-sm text-white"
+          <div className="space-y-2">
+            <label className="text-xs text-[#9c93a8] font-medium">Gemini API Key</label>
+            <input 
+              type="password"
+              value={customApiKey}
+              onChange={(e) => setCustomApiKey(e.target.value)}
+              placeholder="AIzaSy...................................."
+              className="w-full px-4 py-3 rounded-xl bg-[#0d0b11] border border-[#2d2938] focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none text-sm text-white font-mono placeholder:text-[#4d465c] transition-all"
+            />
+            <p className="text-[11px] text-[#6b6375] flex items-center gap-1.5 pt-1">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-[#9c93a8]" />
+              <span>Your API key is securely stored in your browser's local storage and sent with your requests.</span>
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3 pt-2">
+            <button 
+              type="submit"
+              className="flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white text-xs font-semibold shadow-lg shadow-purple-900/20 transition-all active:scale-95"
+            >
+              <Save className="w-4 h-4" />
+              <span>Save API Key</span>
+            </button>
+
+            {hasCustomKey && (
+              <button 
+                type="button"
+                onClick={handleRemove}
+                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#201c2a] hover:bg-red-950/30 text-[#9c93a8] hover:text-red-400 border border-[#2d2938] hover:border-red-800/40 text-xs font-semibold transition-all"
               >
-                <option value="gpt-4-omni">GPT-4 Omni (Fast & Vision)</option>
-                <option value="gpt-4o-mini">GPT-4o Mini (Efficient)</option>
-                <option value="dall-e-3">DALL-E 3 (Creative Images)</option>
-              </select>
-            </div>
+                <Trash2 className="w-4 h-4" />
+                <span>Clear & Use Default</span>
+              </button>
+            )}
 
-            <div className="space-y-1.5">
-              <label className="text-xs text-[#9c93a8] font-medium">Temperature</label>
-              <input 
-                type="range" 
-                min="0" 
-                max="1" 
-                step="0.1" 
-                defaultValue="0.7"
-                className="w-full accent-purple-500 bg-[#0d0b11] h-2 rounded-lg cursor-pointer"
-              />
-            </div>
+            {isSaved && (
+              <span className="text-xs text-emerald-400 font-medium flex items-center gap-1.5 animate-fadeIn">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Settings saved successfully</span>
+              </span>
+            )}
           </div>
-        </div>
+        </form>
 
-        {/* Accessibility & Theme */}
-        <div className="p-6 rounded-2xl bg-[#17141e] border border-[#2d2938] space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-yellow-500/10 text-yellow-400">
-              <Moon className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white text-sm">User Interface Prefs</h3>
-              <p className="text-xs text-[#9c93a8]">Personalize default sounds and visual themes.</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-xl bg-[#0d0b11]/50 border border-[#2d2938]">
-            <div className="flex items-center gap-3">
-              <Volume2 className="w-5 h-5 text-[#9c93a8]" />
-              <div>
-                <span className="text-sm font-semibold text-white block">Auto Voice TTS</span>
-                <span className="text-xs text-[#6b6375]">Speak assistant responses out loud automatically</span>
-              </div>
-            </div>
-            <input 
-              type="checkbox" 
-              checked={enableVoice}
-              onChange={(e) => setEnableVoice(e.target.checked)}
-              className="w-4 h-4 accent-purple-600 cursor-pointer"
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-xl bg-[#0d0b11]/50 border border-[#2d2938]">
-            <div className="flex items-center gap-3">
-              <Lock className="w-5 h-5 text-[#9c93a8]" />
-              <div>
-                <span className="text-sm font-semibold text-white block">Secure Mode</span>
-                <span className="text-xs text-[#6b6375]">Require credentials before unlocking chat panel</span>
-              </div>
-            </div>
-            <input 
-              type="checkbox" 
-              defaultChecked={false}
-              className="w-4 h-4 accent-purple-600 cursor-pointer"
-            />
-          </div>
-        </div>
-
-        {/* Save Bar Button */}
-        <div className="flex items-center gap-4">
-          <button 
-            type="submit"
-            className="flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white text-sm font-semibold shadow-lg transition-all active:scale-95"
-          >
-            <Save className="w-4 h-4" />
-            <span>Save System Configuration</span>
-          </button>
-          
-          {isSaved && (
-            <span className="text-xs text-green-400 font-medium animate-pulse">
-              ✓ System settings saved successfully.
-            </span>
-          )}
-        </div>
-
-      </form>
+      </div>
     </div>
   );
 }

@@ -4,27 +4,42 @@ import {
   MessageSquare, 
   Archive, 
   Settings, 
-  User, 
+  User as UserIcon, 
   HelpCircle,
   X,
   Sparkles,
-  ArchiveRestore
+  ArchiveRestore,
+  LogIn,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ 
   chats = [], 
   activeChatId, 
   onSelectChat, 
   onNewChat, 
-  onArchiveChat,
+  onArchiveChat, 
   isOpen, 
   onClose,
   activeView,
   onSelectView,
   isLoading = false
 }) {
+  const { user, isAuthenticated, openAuthModal, logout } = useAuth();
+  
   // Only show active (non-archived) chats in sidebar recent chats
   const activeChats = chats.filter(chat => !chat.archived);
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
 
   return (
     <>
@@ -166,37 +181,86 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Footer Area */}
-        <div className="p-4 border-t border-[#2d2938] space-y-1">
-          <button
-            onClick={() => {
-              onSelectView('profile');
-              onClose();
-            }}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              activeView === 'profile'
-                ? 'bg-[#2a2438] text-white'
-                : 'text-[#9c93a8] hover:bg-[#201c2a] hover:text-white'
-            }`}
-          >
-            <User className="w-5 h-5" />
-            <span>Profile</span>
-          </button>
+        {/* User Profile & Auth Footer Area */}
+        <div className="p-3 border-t border-[#2d2938] space-y-2">
+          {isAuthenticated && user ? (
+            <div className="flex items-center justify-between p-2 rounded-xl bg-[#201c2a]/80 border border-[#2d2938]/60">
+              <div 
+                className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1"
+                onClick={() => {
+                  onSelectView('profile');
+                  onClose();
+                }}
+              >
+                {user.picture ? (
+                  <img 
+                    src={user.picture} 
+                    alt={user.name} 
+                    className="w-8 h-8 rounded-full border border-purple-500/40 object-cover shrink-0" 
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-700 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    {getInitials(user.name)}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-white truncate">{user.name}</p>
+                  <p className="text-[10px] text-[#9c93a8] truncate">{user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={logout}
+                className="p-1.5 text-[#9c93a8] hover:text-red-400 rounded-lg hover:bg-[#2c2738] transition-all shrink-0 ml-1"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                openAuthModal();
+                onClose();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#201c2a] hover:bg-[#2a2438] text-white border border-[#2d2938] text-xs font-medium transition-all"
+            >
+              <LogIn className="w-4 h-4 text-purple-400" />
+              <span>Sign In with Google</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => {
-              onSelectView('help');
-              onClose();
-            }}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              activeView === 'help'
-                ? 'bg-[#2a2438] text-white'
-                : 'text-[#9c93a8] hover:bg-[#201c2a] hover:text-white'
-            }`}
-          >
-            <HelpCircle className="w-5 h-5" />
-            <span>Help</span>
-          </button>
+          <div className="flex items-center justify-between px-1">
+            <button
+              onClick={() => {
+                onSelectView('profile');
+                onClose();
+              }}
+              className={`flex items-center gap-2 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                activeView === 'profile'
+                  ? 'text-white font-semibold'
+                  : 'text-[#9c93a8] hover:text-white'
+              }`}
+            >
+              <UserIcon className="w-3.5 h-3.5" />
+              <span>Profile</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onSelectView('help');
+                onClose();
+              }}
+              className={`flex items-center gap-2 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                activeView === 'help'
+                  ? 'text-white font-semibold'
+                  : 'text-[#9c93a8] hover:text-white'
+              }`}
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Help</span>
+            </button>
+          </div>
         </div>
       </aside>
     </>
