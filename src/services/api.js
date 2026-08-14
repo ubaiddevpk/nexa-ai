@@ -3,7 +3,7 @@
  * All backend API calls are routed through this file.
  */
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://nexa-ai-backend-mlar.onrender.com/api';
 
 /** Helper to attach JWT Bearer token and optional custom Gemini API key */
 function getAuthHeaders(isJson = true) {
