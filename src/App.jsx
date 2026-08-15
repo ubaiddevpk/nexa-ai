@@ -32,6 +32,7 @@ export default function App() {
   const [isSending, setIsSending] = useState(false);
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
   const [draftVoiceText, setDraftVoiceText] = useState('');
+  const [sendError, setSendError] = useState(null);
 
   // ─── Load chats on mount and when authentication state changes ─────────────
   useEffect(() => {
@@ -185,6 +186,7 @@ export default function App() {
 
     try {
       setIsSending(true);
+      setSendError(null);
       const updatedChat = await sendMessage(currentId, text);
       // Replace optimistic state with real server response
       setChats(prev => {
@@ -199,6 +201,19 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+
+      // Show a friendly error banner
+      const errMsg = err.message || '';
+      if (errMsg.includes('overloaded') || errMsg.includes('temporarily')) {
+        setSendError('⚡ Gemini AI is temporarily overloaded. Please wait a moment and try again.');
+      } else if (errMsg.includes('rate') || errMsg.includes('Rate limit')) {
+        setSendError('🕐 Rate limit reached. Please wait a few seconds before sending another message.');
+      } else {
+        setSendError('❌ Failed to get a response. Please check your connection and try again.');
+      }
+      // Auto-clear error after 6s
+      setTimeout(() => setSendError(null), 6000);
+
       // Remove optimistic message on failure
       setChats(prev => {
         const next = prev.map(c =>
@@ -302,6 +317,7 @@ export default function App() {
             isSending={isSending}
             isUploadingPDF={isUploadingPDF}
             draftVoiceText={draftVoiceText}
+            sendError={sendError}
           />
         );
       case 'archive':

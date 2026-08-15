@@ -35,7 +35,8 @@ export default function Dashboard({
   isSending = false,
   isUploadingPDF = false,
   onRemovePDF,
-  draftVoiceText = ''
+  draftVoiceText = '',
+  sendError = null
 }) {
   const [inputText, setInputText] = useState('');
 
@@ -466,6 +467,13 @@ export default function Dashboard({
                 <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce [animation-delay:150ms]"></span>
                 <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce [animation-delay:300ms]"></span>
               </div>
+            </div>
+          )}
+
+          {/* Error banner for failed messages (overload, rate limit, etc.) */}
+          {sendError && (
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-red-950/30 border border-red-800/40 text-xs text-red-300 animate-fadeIn">
+              <span className="flex-1 leading-relaxed">{sendError}</span>
             </div>
           )}
 
