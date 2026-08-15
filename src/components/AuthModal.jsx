@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
-import { X, Sparkles, Cloud, History, Shield, Lock, AlertCircle } from 'lucide-react';
+import { X, Cloud, History, Shield, Lock, AlertCircle } from 'lucide-react';
+import NexaLogo from './NexaLogo';
 
 export default function AuthModal() {
   const { isAuthModalOpen, closeAuthModal, handleGoogleSuccess } = useAuth();
@@ -24,10 +25,10 @@ export default function AuthModal() {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header */}
+        {/* Modal Header with NexaLogo */}
         <div className="flex flex-col items-center text-center mb-5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-900/40 mb-3">
-            <Sparkles className="w-6 h-6 text-white animate-pulse" />
+          <div className="w-14 h-14 rounded-2xl bg-[#0d0b11] border border-purple-500/30 flex items-center justify-center shadow-lg shadow-purple-900/40 mb-3 p-2.5">
+            <NexaLogo className="w-9 h-9" animated={true} />
           </div>
           <h3 className="text-xl font-bold text-white tracking-wide">Sign in to Nexa AI</h3>
           <p className="text-xs text-[#9c93a8] mt-1.5 leading-relaxed max-w-xs">

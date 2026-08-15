@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { 
-  Sparkles, 
   Mail, 
   Image as ImageIcon, 
   FileText, 
@@ -21,9 +20,9 @@ import {
   Eye,
   Terminal,
   X,
-  CheckCheck,
- 
+  CheckCheck
 } from 'lucide-react';
+import NexaLogo from '../components/NexaLogo';
 
 export default function Dashboard({ 
   onMenuToggle, 
@@ -141,28 +140,31 @@ export default function Dashboard({
     <div className="flex-1 flex flex-col bg-[#0d0b11] h-screen relative overflow-hidden">
       
       {/* Top Navigation Header */}
-      <header className="flex items-center justify-between px-4 md:px-8 py-4 border-b border-[#2d2938] bg-[#0d0b11]/80 backdrop-blur-md sticky top-0 z-30">
+      <header className="flex items-center justify-between px-4 md:px-8 py-3.5 border-b border-[#2d2938] bg-[#0d0b11]/80 backdrop-blur-md sticky top-0 z-30">
         
-        {/* Left: Menu + Title */}
-        <div className="flex items-center gap-3">
+        {/* Left: Menu + Brand Logo + Title */}
+        <div className="flex items-center gap-3 min-w-0">
           <button 
             onClick={onMenuToggle}
-            className="p-2 text-[#9c93a8] hover:text-white rounded-lg md:hidden hover:bg-[#17141e]"
+            className="p-2 text-[#9c93a8] hover:text-white rounded-lg md:hidden hover:bg-[#17141e] shrink-0"
           >
             <Menu className="w-6 h-6" />
           </button>
           
-          {chatSession ? (
-            <span className="font-semibold text-white truncate max-w-[150px] md:max-w-sm">
-              {chatSession.title}
-            </span>
-          ) : (
-            <span className="font-bold text-lg text-white tracking-wide">NexaAI</span>
-          )}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <NexaLogo className="w-6 h-6 shrink-0" animated={false} />
+            {chatSession ? (
+              <span className="font-semibold text-white truncate max-w-[150px] sm:max-w-xs md:max-w-md text-sm sm:text-base">
+                {chatSession.title}
+              </span>
+            ) : (
+              <span className="font-bold text-base sm:text-lg text-white tracking-wide">Nexa AI</span>
+            )}
+          </div>
         </div>
 
         {/* Right: Share + Download */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <div className="relative">
             <button
               onClick={handleShare}
@@ -192,15 +194,15 @@ export default function Dashboard({
           /* Landing Welcome State */
           <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-2xl mx-auto text-center space-y-8">
             <div className="relative group">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-purple-600 to-indigo-600 blur-xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
-              <div className="relative w-20 h-20 rounded-3xl bg-[#17141e] border border-[#2d2938] flex items-center justify-center shadow-2xl">
-                <Sparkles className="w-10 h-10 text-purple-400 animate-pulse" />
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
+              <div className="relative w-24 h-24 rounded-3xl bg-[#17141e] border border-[#2d2938] flex items-center justify-center shadow-2xl p-4">
+                <NexaLogo className="w-16 h-16" animated={true} />
               </div>
             </div>
 
             <div className="space-y-3">
               <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
-                Hi, I'm <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-300">NexaAI</span>.
+                Hi, I'm <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-300 to-blue-400">Nexa AI</span>.
               </h2>
               <p className="text-sm md:text-base text-[#9c93a8]">
                 How can I help you today?
@@ -230,7 +232,7 @@ export default function Dashboard({
           /* Active Chat Dialogue State */
           <div className="max-w-3xl mx-auto space-y-6">
             {chatSession.messages.map((message) => (
-              <div key={message.id} className="space-y-2">
+              <div key={message.id || message._id} className="space-y-2">
                 
                 {/* User Message */}
                 {message.role === 'user' ? (
@@ -248,9 +250,9 @@ export default function Dashboard({
                   </div>
                 ) : (
                   /* Assistant Message Card */
-                  <div className="flex gap-4 pr-6">
-                    <div className="w-8 h-8 rounded-full bg-[#17141e] border border-[#2d2938] flex items-center justify-center shrink-0">
-                      <Sparkles className="w-4.5 h-4.5 text-purple-400" />
+                  <div className="flex gap-3.5 pr-6">
+                    <div className="w-8 h-8 rounded-xl bg-[#17141e] border border-purple-500/30 flex items-center justify-center shrink-0 p-1 shadow-md shadow-purple-950/30">
+                      <NexaLogo className="w-5 h-5" animated={false} />
                     </div>
                     
                     <div className="flex-1 space-y-4">
@@ -301,7 +303,7 @@ export default function Dashboard({
                             <div className="flex items-center justify-between px-4 py-2 bg-[#201c2a] text-xs text-[#9c93a8] border-b border-[#2d2938]">
                               <span>JavaScript</span>
                               <button 
-                                onClick={() => handleCopyText(message.codeBlock, message.id + '-code')} 
+                                onClick={() => handleCopyText(message.codeBlock, (message.id || message._id) + '-code')} 
                                 className="flex items-center gap-1 hover:text-white"
                               >
                                 <Copy className="w-3.5 h-3.5" />
@@ -345,18 +347,18 @@ export default function Dashboard({
                       {/* Footer Message controls */}
                       <div className="flex items-center gap-3 pl-2 text-[#9c93a8]">
                         <button 
-                          onClick={() => handleListenText(message.content, message.id)}
-                          className={`transition-colors ${speakingMessageId === message.id ? 'text-purple-400 hover:text-purple-300' : 'hover:text-white'}`}
-                          title={speakingMessageId === message.id ? "Stop listening" : "Listen to response"}
+                          onClick={() => handleListenText(message.content, message.id || message._id)}
+                          className={`transition-colors ${speakingMessageId === (message.id || message._id) ? 'text-purple-400 hover:text-purple-300' : 'hover:text-white'}`}
+                          title={speakingMessageId === (message.id || message._id) ? "Stop listening" : "Listen to response"}
                         >
                           <Volume2 className="w-4.5 h-4.5" />
                         </button>
                         <button 
-                          onClick={() => handleCopyText(message.content, message.id)}
+                          onClick={() => handleCopyText(message.content, message.id || message._id)}
                           className="hover:text-white transition-colors relative"
                           title="Copy response"
                         >
-                          {copiedMessageId === message.id ? (
+                          {copiedMessageId === (message.id || message._id) ? (
                             <Check className="w-4.5 h-4.5 text-green-400" />
                           ) : (
                             <Copy className="w-4.5 h-4.5" />
@@ -371,15 +373,15 @@ export default function Dashboard({
                         </button>
                         <span className="text-[#2d2938]">|</span>
                         <button 
-                          onClick={() => handleReaction(message.id, 'like')}
-                          className={`transition-colors ${reactions[message.id] === 'like' ? 'text-green-400 hover:text-green-300' : 'hover:text-white'}`} 
+                          onClick={() => handleReaction(message.id || message._id, 'like')}
+                          className={`transition-colors ${reactions[message.id || message._id] === 'like' ? 'text-green-400 hover:text-green-300' : 'hover:text-white'}`} 
                           title="Good response"
                         >
                           <ThumbsUp className="w-4.5 h-4.5" />
                         </button>
                         <button 
-                          onClick={() => handleReaction(message.id, 'dislike')}
-                          className={`transition-colors ${reactions[message.id] === 'dislike' ? 'text-red-400 hover:text-red-300' : 'hover:text-white'}`} 
+                          onClick={() => handleReaction(message.id || message._id, 'dislike')}
+                          className={`transition-colors ${reactions[message.id || message._id] === 'dislike' ? 'text-red-400 hover:text-red-300' : 'hover:text-white'}`} 
                           title="Poor response"
                         >
                           <ThumbsDown className="w-4.5 h-4.5" />
@@ -432,7 +434,7 @@ export default function Dashboard({
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:150ms]"></span>
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:300ms]"></span>
               </div>
-              <span>NexaAI is thinking...</span>
+              <span>Nexa AI is thinking...</span>
             </div>
           )}
 
@@ -452,7 +454,7 @@ export default function Dashboard({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={chatSession?.activePDF ? "Ask about the attached PDF..." : "Message NexaAI..."}
+              placeholder={chatSession?.activePDF ? "Ask about the attached PDF..." : "Message Nexa AI..."}
               className="flex-1 bg-transparent border-0 outline-none ring-0 text-white text-sm placeholder-[#6b6375]"
             />
             
@@ -482,7 +484,7 @@ export default function Dashboard({
           </div>
 
           <p className="text-center text-[10px] text-[#6b6375]">
-            NexaAI can make mistakes. Consider verifying important information.
+            Nexa AI can make mistakes. Consider verifying important information.
           </p>
         </div>
       </footer>

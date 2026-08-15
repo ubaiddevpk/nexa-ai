@@ -7,11 +7,11 @@ import {
   User as UserIcon, 
   HelpCircle,
   X,
-  Sparkles,
   ArchiveRestore,
   LogIn,
   LogOut
 } from 'lucide-react';
+import NexaLogo from './NexaLogo';
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ 
@@ -46,7 +46,7 @@ export default function Sidebar({
       {/* Mobile Backdrop overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/60 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden transition-opacity duration-300"
           onClick={onClose}
         />
       )}
@@ -57,22 +57,22 @@ export default function Sidebar({
         transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-screen
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Header / Brand */}
+        {/* Header / Brand with Custom NexaLogo */}
         <div className="flex items-center justify-between p-5 border-b border-[#2d2938]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-900/30">
-              <Sparkles className="w-5 h-5 text-white animate-pulse" />
+            <div className="w-10 h-10 rounded-xl bg-[#0d0b11] border border-purple-500/30 flex items-center justify-center shadow-lg shadow-purple-950/40">
+              <NexaLogo className="w-6 h-6" animated={true} />
             </div>
             <div>
-              <h1 className="font-bold text-lg text-white leading-tight">Nexa AI</h1>
-              <span className="text-xs text-[#9c93a8]">Intelligent Assistant</span>
+              <h1 className="font-bold text-lg text-white leading-tight tracking-wide">Nexa AI</h1>
+              <span className="text-[11px] text-[#9c93a8] font-medium">Intelligent Assistant</span>
             </div>
           </div>
           
           {/* Close button on mobile */}
           <button 
             onClick={onClose}
-            className="p-1 text-[#9c93a8] hover:text-white rounded-md md:hidden hover:bg-[#201c2a]"
+            className="p-1.5 text-[#9c93a8] hover:text-white rounded-lg md:hidden hover:bg-[#201c2a] border border-transparent hover:border-[#2d2938] transition-all"
           >
             <X className="w-5 h-5" />
           </button>
@@ -130,14 +130,15 @@ export default function Sidebar({
                       <span className="truncate pr-1">{chat.title}</span>
                     </button>
                     
-                    {/* Quick Archive button on hover */}
+                    {/* Archive button: always visible on mobile/touch, hover on desktop */}
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         onArchiveChat(chat._id);
                       }}
-                      className="absolute right-2 opacity-0 group-hover/item:opacity-100 p-1.5 rounded-lg text-[#9c93a8] hover:text-white hover:bg-[#2c2738] transition-all"
+                      className="absolute right-2 opacity-100 md:opacity-0 md:group-hover/item:opacity-100 p-1.5 rounded-lg text-[#9c93a8] hover:text-white bg-[#201c2a]/80 md:bg-transparent hover:bg-[#2c2738] border border-[#2d2938]/50 md:border-transparent transition-all"
                       title="Archive chat"
+                      aria-label="Archive chat"
                     >
                       <Archive className="w-4 h-4" />
                     </button>
