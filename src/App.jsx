@@ -7,6 +7,7 @@ import Archive from './pages/Archive';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Help from './pages/Help';
+import NexaLogo from './components/NexaLogo';
 import { useAuth } from './context/AuthContext';
 import {
   fetchAllChats,
@@ -353,7 +354,10 @@ export default function App() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <span className="ml-2 font-semibold text-white capitalize">{activeView}</span>
+            <div className="flex items-center gap-2 ml-2">
+              <NexaLogo className="w-5 h-5" animated={false} />
+              <span className="font-semibold text-white capitalize">{activeView}</span>
+            </div>
           </div>
         )}
         {renderActiveView()}
