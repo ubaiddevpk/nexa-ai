@@ -31,6 +31,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
+  const [draftVoiceText, setDraftVoiceText] = useState('');
 
   // ─── Load chats on mount and when authentication state changes ─────────────
   useEffect(() => {
@@ -275,9 +276,11 @@ export default function App() {
   };
 
   // ─── Handle Whisper transcription from ListeningOverlay ───────────────────
-  const handleTranscriptionComplete = (text) => {
+  const handleTranscriptionDraft = (text) => {
     if (text && text.trim()) {
-      handleSendMessage(text);
+      setDraftVoiceText(text);
+      // Auto-clear after Dashboard useEffect picks it up
+      setTimeout(() => setDraftVoiceText(''), 500);
     }
   };
 
@@ -298,6 +301,7 @@ export default function App() {
             onRemovePDF={handleRemovePDF}
             isSending={isSending}
             isUploadingPDF={isUploadingPDF}
+            draftVoiceText={draftVoiceText}
           />
         );
       case 'archive':
@@ -368,11 +372,11 @@ export default function App() {
         {renderActiveView()}
       </div>
 
-      {/* Voice Listening Overlay — records mic and sends to Whisper */}
+      {/* Voice Listening Overlay — records mic and fills input field */}
       <ListeningOverlay
         isOpen={isListening}
         onClose={() => setIsListening(false)}
-        onTranscriptionComplete={handleTranscriptionComplete}
+        onTranscriptionDraft={handleTranscriptionDraft}
       />
 
       {/* Google Sign-In First Time / On-Demand Modal */}

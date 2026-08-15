@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { 
   Mail, 
@@ -34,9 +34,17 @@ export default function Dashboard({
   onAttachPDF,
   isSending = false,
   isUploadingPDF = false,
-  onRemovePDF
+  onRemovePDF,
+  draftVoiceText = ''
 }) {
   const [inputText, setInputText] = useState('');
+
+  // When a voice transcription draft arrives, fill the input field for review
+  useEffect(() => {
+    if (draftVoiceText) {
+      setInputText(draftVoiceText);
+    }
+  }, [draftVoiceText]);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const [reactions, setReactions] = useState({}); // { [messageId]: 'like' | 'dislike' | null }
