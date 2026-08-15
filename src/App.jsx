@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import ListeningOverlay from './components/ListeningOverlay';
@@ -33,6 +33,7 @@ export default function App() {
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
   const [draftVoiceText, setDraftVoiceText] = useState('');
   const [sendError, setSendError] = useState(null);
+  const abortControllerRef = useRef(null); // tracks in-flight Gemini request
 
   // ─── Load chats on mount and when authentication state changes ─────────────
   useEffect(() => {
@@ -185,9 +186,14 @@ export default function App() {
     });
 
     try {
+      // Create a new AbortController for this request so it can be cancelled
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       setIsSending(true);
       setSendError(null);
-      const updatedChat = await sendMessage(currentId, text);
+      const updatedChat = await sendMessage(currentId, text, controller.signal);
+      abortControllerRef.current = null;
       // Replace optimistic state with real server response
       setChats(prev => {
         const next = prev.map(c => c._id === currentId ? updatedChat : c);
@@ -200,6 +206,24 @@ export default function App() {
         refreshUser();
       }
     } catch (err) {
+      abortControllerRef.current = null;
+
+      // Silently ignore abort errors — user intentionally cancelled
+      if (err.name === 'AbortError') {
+        // Remove the optimistic message when user cancels
+        setChats(prev => {
+          const next = prev.map(c =>
+            c._id === currentId
+              ? { ...c, messages: c.messages.filter(m => m._id !== optimisticMsg._id) }
+              : c
+          );
+          saveGuestChats(next);
+          return next;
+        });
+        setIsSending(false);
+        return;
+      }
+
       console.error('Failed to send message:', err);
 
       // Show a friendly error banner
@@ -226,6 +250,14 @@ export default function App() {
       });
     } finally {
       setIsSending(false);
+    }
+  };
+
+  // ─── Cancel the in-flight Gemini request ───────────────────────────────────
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
   };
 
@@ -318,6 +350,7 @@ export default function App() {
             isUploadingPDF={isUploadingPDF}
             draftVoiceText={draftVoiceText}
             sendError={sendError}
+            onStopGeneration={handleStopGeneration}
           />
         );
       case 'archive':
@@ -345,6 +378,7 @@ export default function App() {
             onAttachPDF={handleAttachPDF}
             onRemovePDF={handleRemovePDF}
             isSending={isSending}
+            onStopGeneration={handleStopGeneration}
           />
         );
     }

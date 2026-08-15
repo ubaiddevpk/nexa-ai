@@ -92,12 +92,17 @@ export async function deleteChat(chatId) {
   return res.json();
 }
 
-/** Send a user message and receive AI-generated reply */
-export async function sendMessage(chatId, content) {
+/** Send a user message and receive AI-generated reply.
+ *  @param {string} chatId
+ *  @param {string} content
+ *  @param {AbortSignal} [signal] - optional AbortController signal to cancel the request
+ */
+export async function sendMessage(chatId, content, signal) {
   const res = await fetch(`${BASE_URL}/chats/${chatId}/messages`, {
     method: 'POST',
     headers: getAuthHeaders(true),
-    body: JSON.stringify({ content })
+    body: JSON.stringify({ content }),
+    signal
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));

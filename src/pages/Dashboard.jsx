@@ -21,7 +21,8 @@ import {
   Terminal,
   X,
   CheckCheck,
-  Loader2
+  Loader2,
+  Square
 } from 'lucide-react';
 import NexaLogo from '../components/NexaLogo';
 
@@ -36,7 +37,8 @@ export default function Dashboard({
   isUploadingPDF = false,
   onRemovePDF,
   draftVoiceText = '',
-  sendError = null
+  sendError = null,
+  onStopGeneration
 }) {
   const [inputText, setInputText] = useState('');
 
@@ -467,6 +469,15 @@ export default function Dashboard({
                 <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce [animation-delay:150ms]"></span>
                 <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce [animation-delay:300ms]"></span>
               </div>
+              {/* Stop generation button in thinking bar */}
+              <button
+                onClick={onStopGeneration}
+                className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-950/40 border border-red-800/50 text-red-400 hover:text-red-300 hover:bg-red-900/40 hover:border-red-600/60 text-[11px] font-medium transition-all active:scale-95"
+                title="Stop generating"
+              >
+                <Square className="w-3 h-3 fill-current" />
+                Stop
+              </button>
             </div>
           )}
 
@@ -521,16 +532,19 @@ export default function Dashboard({
             </button>
 
             <button 
-              onClick={handleSend}
-              disabled={!inputText.trim() || isSending || isUploadingPDF}
+              onClick={isSending ? onStopGeneration : handleSend}
+              disabled={(!inputText.trim() && !isSending) || isUploadingPDF}
               className={`p-2 rounded-xl text-white transition-all shadow-lg ${
-                inputText.trim() && !isSending && !isUploadingPDF
+                isSending
+                  ? 'bg-red-900/60 border border-red-700/50 hover:bg-red-800/70 active:scale-95'
+                  : inputText.trim() && !isUploadingPDF
                   ? 'bg-gradient-to-r from-purple-700 to-indigo-600 hover:scale-105 active:scale-95' 
                   : 'bg-transparent text-[#6b6375] cursor-not-allowed'
               }`}
+              title={isSending ? 'Stop generating' : 'Send message'}
             >
               {isSending 
-                ? <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                ? <Square className="w-4 h-4 fill-current text-red-300" />
                 : <Send className="w-4 h-4" />
               }
             </button>
