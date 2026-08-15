@@ -63,3 +63,17 @@ body {
   animation: nexaCorePulse 1.5s ease-in-out infinite;
   transform-origin: 50px 50px;
 }
+
+/* Shimmer animation for indeterminate progress bar */
+@keyframes progressShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.animate-shimmer {
+  animation: progressShimmer 1.5s infinite linear;
+}

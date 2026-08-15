@@ -30,6 +30,7 @@ export default function App() {
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isUploadingPDF, setIsUploadingPDF] = useState(false);
 
   // ─── Load chats on mount and when authentication state changes ─────────────
   useEffect(() => {
@@ -239,6 +240,7 @@ export default function App() {
     }
 
     try {
+      setIsUploadingPDF(true);
       console.log(`Uploading PDF "${file.name}" to chat ${chatId}...`);
       const result = await uploadPDF(chatId, file);
       setChats(prev => {
@@ -252,6 +254,8 @@ export default function App() {
     } catch (err) {
       console.error('Failed to upload PDF:', err);
       alert(`PDF upload failed: ${err.message}`);
+    } finally {
+      setIsUploadingPDF(false);
     }
   };
 
@@ -293,6 +297,7 @@ export default function App() {
             onAttachPDF={handleAttachPDF}
             onRemovePDF={handleRemovePDF}
             isSending={isSending}
+            isUploadingPDF={isUploadingPDF}
           />
         );
       case 'archive':

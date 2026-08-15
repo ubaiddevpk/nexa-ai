@@ -20,7 +20,8 @@ import {
   Eye,
   Terminal,
   X,
-  CheckCheck
+  CheckCheck,
+  Loader2
 } from 'lucide-react';
 import NexaLogo from '../components/NexaLogo';
 
@@ -32,6 +33,7 @@ export default function Dashboard({
   onSuggestionClick,
   onAttachPDF,
   isSending = false,
+  isUploadingPDF = false,
   onRemovePDF
 }) {
   const [inputText, setInputText] = useState('');
@@ -412,7 +414,7 @@ export default function Dashboard({
           />
 
           {/* Active PDF file indicator above input bar */}
-          {chatSession?.activePDF && (
+          {chatSession?.activePDF && !isUploadingPDF && (
             <div className="flex items-center gap-2 w-fit px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 animate-fade-in mb-1">
               <FileText className="w-3.5 h-3.5" />
               <span>Attached Context: <strong>{chatSession.activePDF}</strong></span>
@@ -423,6 +425,24 @@ export default function Dashboard({
               >
                 <X className="w-3 h-3" />
               </button>
+            </div>
+          )}
+
+          {/* PDF Uploading Progress Bar Component */}
+          {isUploadingPDF && (
+            <div className="p-3 rounded-2xl bg-[#17141e] border border-purple-500/30 shadow-xl mb-1.5 animate-fadeIn space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-purple-300 font-medium">
+                  <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+                  <span>Uploading & Parsing PDF document...</span>
+                </div>
+                <span className="text-[11px] text-[#9c93a8] font-mono">Processing text</span>
+              </div>
+              
+              {/* Animated Glowing Progress Bar Track */}
+              <div className="w-full bg-[#0d0b11] rounded-full h-1.5 overflow-hidden relative">
+                <div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-500 rounded-full animate-shimmer" />
+              </div>
             </div>
           )}
 
@@ -446,10 +466,19 @@ export default function Dashboard({
             
             <button 
               onClick={handlePDFUploadClick}
-              className="p-1.5 text-[#9c93a8] hover:text-white hover:bg-[#201c2a] rounded-lg transition-colors"
-              title="Attach PDF context"
+              disabled={isUploadingPDF}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isUploadingPDF 
+                  ? 'text-purple-400 bg-purple-500/10 cursor-not-allowed' 
+                  : 'text-[#9c93a8] hover:text-white hover:bg-[#201c2a]'
+              }`}
+              title={isUploadingPDF ? "Uploading PDF..." : "Attach PDF context"}
             >
-              <Paperclip className="w-5 h-5" />
+              {isUploadingPDF ? (
+                <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+              ) : (
+                <Paperclip className="w-5 h-5" />
+              )}
             </button>
             
             <input 
@@ -457,7 +486,13 @@ export default function Dashboard({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={chatSession?.activePDF ? "Ask about the attached PDF..." : "Message Nexa AI..."}
+              placeholder={
+                isUploadingPDF 
+                  ? "Extracting PDF text into session context..." 
+                  : chatSession?.activePDF 
+                  ? "Ask about the attached PDF..." 
+                  : "Message Nexa AI..."
+              }
               className="flex-1 bg-transparent border-0 outline-none ring-0 text-white text-sm placeholder-[#6b6375]"
             />
             
@@ -471,9 +506,9 @@ export default function Dashboard({
 
             <button 
               onClick={handleSend}
-              disabled={!inputText.trim() || isSending}
+              disabled={!inputText.trim() || isSending || isUploadingPDF}
               className={`p-2 rounded-xl text-white transition-all shadow-lg ${
-                inputText.trim() && !isSending
+                inputText.trim() && !isSending && !isUploadingPDF
                   ? 'bg-gradient-to-r from-purple-700 to-indigo-600 hover:scale-105 active:scale-95' 
                   : 'bg-transparent text-[#6b6375] cursor-not-allowed'
               }`}
