@@ -426,15 +426,18 @@ export default function Dashboard({
             </div>
           )}
 
-          {/* AI thinking loading indicator */}
+          {/* AI thinking loading indicator with animated NexaLogo */}
           {isSending && (
-            <div className="flex items-center gap-2 px-4 py-2 text-xs text-[#9c93a8]">
-              <div className="flex gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:0ms]"></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:150ms]"></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:300ms]"></span>
+            <div className="flex items-center gap-2.5 px-4 py-2 text-xs text-purple-300 animate-fadeIn">
+              <div className="w-5 h-5 rounded-lg bg-[#17141e] border border-purple-500/30 flex items-center justify-center p-0.5 shadow-sm shadow-purple-950/30">
+                <NexaLogo className="w-4 h-4" animated={false} isLoading={true} />
               </div>
-              <span>Nexa AI is thinking...</span>
+              <span className="font-medium text-[#e5e4e7]">Nexa AI is thinking...</span>
+              <div className="flex gap-1 ml-0.5">
+                <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce [animation-delay:0ms]"></span>
+                <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce [animation-delay:150ms]"></span>
+                <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce [animation-delay:300ms]"></span>
+              </div>
             </div>
           )}
 

@@ -2,8 +2,15 @@ import React from 'react';
 
 /**
  * NexaLogo - Futuristic AI core geometric SVG logo for Nexa AI
+ * @param {string} className - CSS sizing & spacing
+ * @param {boolean} animated - Subtle pulse on outer frame
+ * @param {boolean} isLoading - Activates 360-degree circular motion on the inner pink neural bridge & core
  */
-export default function NexaLogo({ className = "w-8 h-8", animated = true }) {
+export default function NexaLogo({ 
+  className = "w-8 h-8", 
+  animated = true, 
+  isLoading = false 
+}) {
   return (
     <svg
       viewBox="0 0 100 100"
@@ -21,7 +28,8 @@ export default function NexaLogo({ className = "w-8 h-8", animated = true }) {
 
         <linearGradient id="nexaAccentGrad" x1="100%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#c084fc" />
-          <stop offset="100%" stopColor="#ec4899" />
+          <stop offset="50%" stopColor="#ec4899" />
+          <stop offset="100%" stopColor="#f43f5e" />
         </linearGradient>
 
         <filter id="nexaGlow" x="-20%" y="-20%" width="140%" height="140%">
@@ -34,12 +42,12 @@ export default function NexaLogo({ className = "w-8 h-8", animated = true }) {
       <polygon
         points="50,6 88,27 88,73 50,94 12,73 12,27"
         stroke="url(#nexaPrimaryGrad)"
-        strokeWidth="3"
+        strokeWidth="3.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="#13101d"
-        fillOpacity="0.85"
-        className={animated ? "animate-pulse" : ""}
+        fillOpacity="0.88"
+        className={animated && !isLoading ? "animate-pulse" : ""}
       />
 
       {/* Cybernetic Inner Accent Border */}
@@ -52,7 +60,7 @@ export default function NexaLogo({ className = "w-8 h-8", animated = true }) {
         fill="none"
       />
 
-      {/* Stylized 'N' Geometry with Multimodal Neural Bridge */}
+      {/* Outer N Pillars */}
       {/* Left Vertical Pillar */}
       <path
         d="M32 30 L32 70"
@@ -69,19 +77,42 @@ export default function NexaLogo({ className = "w-8 h-8", animated = true }) {
         strokeLinecap="round"
       />
 
-      {/* Futuristic Diagonal Bridge */}
-      <path
-        d="M32 32 L68 68"
-        stroke="url(#nexaAccentGrad)"
-        strokeWidth="6"
-        strokeLinecap="round"
-        filter="url(#nexaGlow)"
-      />
-
-      {/* Glowing Neural Nodes */}
+      {/* Outer Pillar Nodes */}
       <circle cx="32" cy="30" r="4.5" fill="#f3e8ff" />
       <circle cx="68" cy="70" r="4.5" fill="#f3e8ff" />
-      <circle cx="50" cy="50" r="3.5" fill="#ffffff" filter="url(#nexaGlow)" />
+
+      {/* Inner Pink Part & Neural Bridge — moves circularly during loading */}
+      <g 
+        className={isLoading ? "animate-nexa-spin" : ""}
+        style={{ transformOrigin: "50px 50px" }}
+      >
+        {/* Glowing Pink Diagonal Bridge */}
+        <path
+          d="M32 32 L68 68"
+          stroke="url(#nexaAccentGrad)"
+          strokeWidth="6.5"
+          strokeLinecap="round"
+          filter="url(#nexaGlow)"
+        />
+
+        {/* Orbiting Pink Neural Satellites (extra visual feedback during circular spin) */}
+        {isLoading && (
+          <>
+            <circle cx="32" cy="32" r="3.5" fill="#f43f5e" filter="url(#nexaGlow)" />
+            <circle cx="68" cy="68" r="3.5" fill="#ec4899" filter="url(#nexaGlow)" />
+          </>
+        )}
+
+        {/* Central Core Nucleus */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="4" 
+          fill="#ffffff" 
+          filter="url(#nexaGlow)"
+          className={isLoading ? "animate-nexa-core" : ""}
+        />
+      </g>
     </svg>
   );
 }
